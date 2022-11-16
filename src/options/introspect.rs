@@ -1,12 +1,8 @@
+use clap::Parser;
 use reqwest::Url;
-use saucer::{clap, Parser};
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    command::{output::JsonOutput, RoverOutput},
-    utils::parsers::parse_header,
-    Result,
-};
+use crate::{command::output::JsonOutput, utils::parsers::parse_header, RoverOutput, RoverResult};
 
 #[derive(Debug, Serialize, Deserialize, Parser)]
 pub struct IntrospectOpts {
@@ -18,21 +14,21 @@ pub struct IntrospectOpts {
     /// If a value has a space in it, use quotes around the pair,
     /// ex. -H "Auth:some key"
 
-    // The `name` here is for the help text and error messages, to print like
-    // --header <key:value> rather than the plural field name --header <headers>
-    #[clap(name="key:value", long="header", short='H', parse(try_from_str = parse_header))]
+    // The `value_name` here is for the help text and error messages, to print like
+    // --header <KEY:VALUE> rather than the plural field name --header <headers>
+    #[arg(value_name="KEY:VALUE", long="header", short='H', value_parser = parse_header)]
     #[serde(skip_serializing)]
     pub headers: Option<Vec<(String, String)>>,
 
     /// poll the endpoint, printing the introspection result if/when its contents change
-    #[clap(long)]
+    #[arg(long)]
     pub watch: bool,
 }
 
 impl IntrospectOpts {
-    pub fn exec_and_watch<F>(&self, exec_fn: F, json: bool) -> Result<RoverOutput>
+    pub fn exec_and_watch<F>(&self, exec_fn: F, json: bool) -> RoverResult<RoverOutput>
     where
-        F: Fn() -> Result<String>,
+        F: Fn() -> RoverResult<String>,
     {
         let mut last_result = None;
         loop {

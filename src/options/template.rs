@@ -1,24 +1,27 @@
 use std::fmt::{self, Display};
 use std::io::Write;
 
+use anyhow::{anyhow, Context};
+use camino::Utf8PathBuf;
+use clap::{Parser, ValueEnum};
 use console::Term;
 use dialoguer::Select;
-use saucer::{anyhow, clap, Context, Parser, Utf8PathBuf, ValueEnum};
+use rover_std::Fs;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
 use crate::command::template::queries::{get_templates_for_language, list_templates_for_language};
-use crate::{error::RoverError, Result};
+use crate::{RoverError, RoverResult};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Parser)]
 pub struct TemplateOpt {
     /// Filter templates by the available language
-    #[clap(long = "language", value_enum)]
+    #[arg(long = "language", value_enum)]
     pub language: Option<ProjectLanguage>,
 }
 
 impl TemplateOpt {
-    pub fn get_or_prompt_language(&self) -> Result<ProjectLanguage> {
+    pub fn get_or_prompt_language(&self) -> RoverResult<ProjectLanguage> {
         if let Some(language) = &self.language {
             Ok(language.clone())
         } else {
@@ -42,7 +45,7 @@ pub(crate) fn extract_tarball(
     download_url: Url,
     template_path: &Utf8PathBuf,
     client: &reqwest::blocking::Client,
-) -> Result<()> {
+) -> RoverResult<()> {
     let download_dir = tempdir::TempDir::new("rover-template")?;
     let download_dir_path = Utf8PathBuf::try_from(download_dir.into_path())?;
     let file_name = format!("{}.tar.gz", template_path);
@@ -62,17 +65,17 @@ pub(crate) fn extract_tarball(
     let tar = flate2::read::GzDecoder::new(f);
     let mut archive = tar::Archive::new(tar);
     archive
-        .unpack(&template_path)
+        .unpack(template_path)
         .with_context(|| format!("could not unpack tarball to '{}'", &template_path))?;
 
     // The unpacked tar will be nested in another folder
-    let extra_dir_name = saucer::Fs::get_dir_entries(&template_path, "")?.find(|_| true);
+    let extra_dir_name = Fs::get_dir_entries(template_path)?.find(|_| true);
     if let Some(Ok(extra_dir_name)) = extra_dir_name {
         // For this reason, we must copy the contents of the folder, then delete it
-        saucer::Fs::copy_dir_all(extra_dir_name.path(), template_path, "")?;
+        Fs::copy_dir_all(extra_dir_name.path(), template_path)?;
 
         // Delete old unpacked zip
-        saucer::Fs::remove_dir_all(extra_dir_name.path(), "")?;
+        Fs::remove_dir_all(extra_dir_name.path())?;
     }
 
     Ok(())

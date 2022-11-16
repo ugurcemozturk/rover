@@ -28,13 +28,17 @@ mod do_dev;
 #[cfg(not(feature = "composition-js"))]
 mod no_dev;
 
+#[cfg(feature = "composition-js")]
 use std::{net::SocketAddr, str::FromStr};
 
-use crate::{
-    options::{OptionalSubgraphOpts, PluginOpts},
-    Result,
-};
-use saucer::{clap, Context, Parser};
+#[cfg(feature = "composition-js")]
+use crate::RoverResult;
+
+#[cfg(feature = "composition-js")]
+use anyhow::Context;
+
+use crate::options::{OptionalSubgraphOpts, PluginOpts};
+use clap::Parser;
 use serde::Serialize;
 
 #[derive(Debug, Serialize, Parser)]
@@ -62,7 +66,7 @@ pub struct SupergraphOpts {
     /// If you start multiple `rover dev` processes on the same address and port, they will communicate with each other.
     ///
     /// If you start multiple `rover dev` processes with different addresses and ports, they will not communicate with each other.
-    #[clap(long, short = 'p', default_value = "3000")]
+    #[arg(long, short = 'p', default_value = "3000")]
     supergraph_port: u16,
 
     /// The address the graph router should listen on.
@@ -70,12 +74,13 @@ pub struct SupergraphOpts {
     /// If you start multiple `rover dev` processes on the same address and port, they will communicate with each other.
     ///
     /// If you start multiple `rover dev` processes with different addresses and ports, they will not communicate with each other.
-    #[clap(long, default_value = "127.0.0.1")]
+    #[arg(long, default_value = "127.0.0.1")]
     supergraph_address: String,
 }
 
+#[cfg(feature = "composition-js")]
 impl SupergraphOpts {
-    pub fn router_socket_addr(&self) -> Result<SocketAddr> {
+    pub fn router_socket_addr(&self) -> RoverResult<SocketAddr> {
         let socket_candidate = format!("{}:{}", &self.supergraph_address, &self.supergraph_port);
         Ok(SocketAddr::from_str(&socket_candidate)
             .with_context(|| format!("{} is not a valid socket address", &socket_candidate))?)
@@ -99,10 +104,10 @@ impl SupergraphOpts {
 
 lazy_static::lazy_static! {
     pub(crate) static ref DEV_ROUTER_VERSION: String =
-      std::env::var("APOLLO_ROVER_DEV_ROUTER_VERSION").unwrap_or_else(|_| "1.0.0".to_string());
+      std::env::var("APOLLO_ROVER_DEV_ROUTER_VERSION").unwrap_or_else(|_| "1.3.0".to_string());
 
     // this number should be mapped to the federation version used by the router
     // https://www.apollographql.com/docs/router/federation-version-support/#support-table
     pub(crate) static ref DEV_COMPOSITION_VERSION: String =
-        std::env::var("APOLLO_ROVER_DEV_COMPOSITION_VERSION").unwrap_or_else(|_| "2.1.2".to_string());
+        std::env::var("APOLLO_ROVER_DEV_COMPOSITION_VERSION").unwrap_or_else(|_| "2.1.4".to_string());
 }

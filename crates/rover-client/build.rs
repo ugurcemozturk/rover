@@ -1,7 +1,9 @@
 use std::fs::{self, read, write};
 
+use anyhow::{anyhow, Result};
+use camino::Utf8PathBuf;
 use reqwest::blocking::Client;
-use saucer::{Fs, Result, Utf8PathBuf};
+use rover_std::Fs;
 use uuid::Uuid;
 
 /// This script downloads the schema if it's not in the file system
@@ -13,9 +15,9 @@ use uuid::Uuid;
 ///
 /// Note: eprintln! statements only show up with `cargo build -vv`
 fn main() -> Result<()> {
-    Fs::create_dir_all(".schema", "")?;
+    Fs::create_dir_all(".schema")?;
     let last_run_uuid = Uuid::new_v4().to_string();
-    Fs::write_file(".schema/last_run.uuid", &last_run_uuid, "")?;
+    Fs::write_file(".schema/last_run.uuid", &last_run_uuid)?;
 
     let hash_path = Utf8PathBuf::from(".schema/hash.id");
 
@@ -84,10 +86,8 @@ const QUERY: &str = r#"query FetchSchema($fetchDocument: Boolean!) {
 }"#;
 
 fn query(fetch_document: bool) -> Result<(String, Option<String>)> {
-    let graphql_endpoint = option_env!("APOLLO_GRAPHQL_SCHEMA_URL").unwrap_or_else(|| {
-        option_env!("APOLLO_REGISTRY_URL")
-            .unwrap_or_else(|| "https://api.apollographql.com/api/graphql")
-    });
+    let graphql_endpoint = option_env!("APOLLO_GRAPHQL_SCHEMA_URL")
+        .unwrap_or_else(|| "https://api.apollographql.com/api/graphql");
     let client = Client::new();
     let schema_query = serde_json::json!({
         "variables": {"fetchDocument": fetch_document},
@@ -96,16 +96,16 @@ fn query(fetch_document: bool) -> Result<(String, Option<String>)> {
     let response = client
         .post(graphql_endpoint)
         .json(&schema_query)
-        .header("apollo-client-name", "rover-client")
+        .header("apollographql-client-name", "rover-client")
         .header(
-            "apollo-client-version",
+            "apollographql-client-version",
             format!("{} (dev)", env!("CARGO_PKG_VERSION")),
         )
         .send()?
         .error_for_status()?;
     let json: serde_json::Value = response.json()?;
     if let Some(errors) = json.get("errors") {
-        return Err(saucer::anyhow!("{:?}", errors));
+        return Err(anyhow!("{:?}", errors));
     }
     let result = &json["data"]["graph"]["variant"]["latestPublication"]["schema"];
     let hash = result["hash"].as_str().unwrap().to_string();

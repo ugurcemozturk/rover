@@ -1,17 +1,15 @@
 use std::fs::read_dir;
 
+use anyhow::{anyhow, Context};
+use camino::Utf8PathBuf;
+use clap::{error::ErrorKind as ClapErrorKind, CommandFactory, Parser};
 use dialoguer::Input;
-use saucer::{
-    clap::{self, ErrorKind as ClapErrorKind},
-    CommandFactory, Context, Parser, Utf8PathBuf,
-};
 use serde::Serialize;
 
 use crate::cli::Rover;
 use crate::options::{extract_tarball, TemplateOpt};
 use crate::utils::client::StudioClientConfig;
-use crate::Suggestion;
-use crate::{anyhow, command::RoverOutput, error::RoverError, Result};
+use crate::{RoverError, RoverErrorSuggestion, RoverOutput, RoverResult};
 
 use super::templates::{get_template, get_templates_for_language, selection_prompt};
 
@@ -22,7 +20,7 @@ pub struct Use {
 
     /// The ID for the official template to use.
     /// Use `rover template list` to see available options.
-    #[clap(short = 't', long = "template")]
+    #[arg(short = 't', long = "template")]
     pub template: Option<String>,
 
     /// The relative or absolute path to create the template directory.
@@ -33,7 +31,7 @@ pub struct Use {
 }
 
 impl Use {
-    pub fn run(&self, client_config: StudioClientConfig) -> Result<RoverOutput> {
+    pub fn run(&self, client_config: StudioClientConfig) -> RoverResult<RoverOutput> {
         // find the template to extract
         let (template_id, download_url) = if let Some(template_id) = &self.template {
             // if they specify an ID, get it
@@ -42,7 +40,7 @@ impl Use {
                 (template_id.clone(), result.download_url)
             } else {
                 let mut err = RoverError::new(anyhow!("No template found with id {}", template_id));
-                err.set_suggestion(Suggestion::Adhoc(
+                err.set_suggestion(RoverErrorSuggestion::Adhoc(
                     "Run `rover template list` to see all available templates.".to_string(),
                 ));
                 return Err(err);
@@ -64,7 +62,7 @@ impl Use {
         Ok(RoverOutput::TemplateUseSuccess { template_id, path })
     }
 
-    pub(crate) fn get_or_prompt_path(&self) -> Result<Utf8PathBuf> {
+    pub(crate) fn get_or_prompt_path(&self) -> RoverResult<Utf8PathBuf> {
         let path: Utf8PathBuf = if let Some(path) = &self.path {
             Ok::<Utf8PathBuf, RoverError>(path.clone())
         } else if atty::is(atty::Stream::Stderr) {
@@ -88,7 +86,7 @@ impl Use {
                         "Cannot use the template because the '{}' directory is not empty.",
                         &path
                     ));
-                    err.set_suggestion(Suggestion::Adhoc(format!("Either rename or remove the existing '{}' directory, or re-run this command with a different `<PATH>` argument.", &path)));
+                    err.set_suggestion(RoverErrorSuggestion::Adhoc(format!("Either rename or remove the existing '{}' directory, or re-run this command with a different `<PATH>` argument.", &path)));
                     Err(err)
                 } else {
                     Ok(path)

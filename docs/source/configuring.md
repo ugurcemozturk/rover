@@ -11,7 +11,7 @@ All Rover commands that communicate with [Apollo Studio](/studio/) require an AP
 * **On your local development machine,** use a personal API key.
 * **In shared environments like CI,** use a graph API key.
 
-> [Learn how to obtain an API key](/studio/api-keys/)
+> [Learn how to obtain an API key](/graphos/api-keys/)
 
 ### 2. Provide the API key to Rover
 
@@ -310,3 +310,4 @@ If present, an environment variable's value takes precedence over all other meth
 | `APOLLO_VCS_COMMIT` | The long identifier (SHA in Git) of the commit. See [Git context](#git-context). |
 | `APOLLO_VCS_AUTHOR` | The name and email of a commit's author (e.g., `Jane Doe <jane@example.com>`). See [Git context](#git-context). |
 | `NO_EMOJI` | Set to `1` if you don't want Rover to print emojis. |
+| `NO_COLOR` | Set to `1` if you don't want Rover to print color. |

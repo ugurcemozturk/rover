@@ -2,7 +2,7 @@
 title: Using Rover in CI/CD
 ---
 
-You can use Rover in any CI/CD environment that uses a Rover-supported operating system (Linux, MacOS, or Windows). Most commonly, this is to run [schema checks](/studio/schema-checks/) with [`rover graph check`](./commands/graphs/#checking-schema-changes) or [`rover subgraph check`](./commands/subgraphs/#checking-subgraph-schema-changes).
+You can use Rover in any CI/CD environment that uses a Rover-supported operating system (Linux, MacOS, or Windows). Most commonly, this is to run [schema checks](/graphos/delivery/schema-checks/) with [`rover graph check`](./commands/graphs/#checking-schema-changes) or [`rover subgraph check`](./commands/subgraphs/#checking-subgraph-schema-changes).
 
 Rover's installation is similar to many other CLI tools, but the recommended method varies depending on which provider you're using. We've included instructions for some of the most common CI/CD providers:
 
@@ -45,7 +45,7 @@ jobs:
           name: Install
           command: |
             # download and install Rover
-            curl -sSL https://rover.apollo.dev/nix/v0.9.1 | sh
+            curl -sSL https://rover.apollo.dev/nix/v0.10.0 | sh
 
             # This allows the PATH changes to persist to the next `run` step
             echo 'export PATH=$HOME/.rover/bin:$PATH' >> $BASH_ENV
@@ -120,7 +120,7 @@ jobs:
 
       - name: Install Rover
         run: |
-          curl -sSL https://rover.apollo.dev/nix/v0.9.1 | sh
+          curl -sSL https://rover.apollo.dev/nix/v0.10.0 | sh
 
           # Add Rover to the $GITHUB_PATH so it can be used in another step
           # https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions#adding-a-system-path
@@ -206,10 +206,10 @@ Normally when installing, Rover adds the path of its executable to your `$PATH`.
 
 To avoid this issue, do one of the following:
 - Use the script, but reference `rover` by its full path (`$HOME/.rover/bin/rover`)
-- Download the latest release via cURL and extract the binary like so (this downloads Rover `0.9.1` for Linux x86 architectures):
+- Download the latest release via cURL and extract the binary like so (this downloads Rover `0.10.0` for Linux x86 architectures):
 
     ```
-    curl -L https://github.com/apollographql/rover/releases/download/v0.9.1/rover-v0.9.1-x86_64-unknown-linux-gnu.tar.gz | tar --strip-components=1 -zxv
+    curl -L https://github.com/apollographql/rover/releases/download/v0.10.0/rover-v0.10.0-x86_64-unknown-linux-gnu.tar.gz | tar --strip-components=1 -zxv
     ```
 
 #### Permission issues

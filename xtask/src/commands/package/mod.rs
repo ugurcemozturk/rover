@@ -1,12 +1,13 @@
 #[cfg(target_os = "macos")]
 mod macos;
 
-use saucer::Utf8PathBuf;
-use saucer::{bail, ensure, Context, Result};
-use saucer::{clap, Parser};
+use anyhow::{bail, ensure, Context, Result};
+use camino::Utf8PathBuf;
+use clap::Parser;
+
 use std::path::Path;
 
-use crate::target::{Target, POSSIBLE_TARGETS};
+use crate::target::Target;
 use crate::utils::{PKG_PROJECT_NAME, PKG_PROJECT_ROOT, PKG_VERSION, TARGET_DIR};
 
 const INCLUDE: &[&str] = &["README.md", "LICENSE"];
@@ -14,17 +15,17 @@ const INCLUDE: &[&str] = &["README.md", "LICENSE"];
 #[derive(Debug, Parser)]
 pub struct Package {
     /// The target to build Rover for
-    #[clap(long = "target", env = "XTASK_TARGET", default_value_t, possible_values = &POSSIBLE_TARGETS)]
+    #[arg(long = "target", env = "XTASK_TARGET", default_value_t)]
     target: Target,
 
     /// Output tarball.
-    #[clap(long, default_value = "artifacts")]
+    #[arg(long, default_value = "artifacts")]
     output: Utf8PathBuf,
 
-    #[clap(long)]
+    #[arg(long)]
     rebuild: bool,
 
-    #[clap(long)]
+    #[arg(long)]
     copy_schema: bool,
 
     #[cfg(target_os = "macos")]
@@ -56,7 +57,7 @@ impl Package {
 
         ensure!(
             release_path.exists(),
-            "Could not find binary at: {}",
+            "Could not find binary at: {}, try running this command with the `--rebuild` flag.",
             release_path
         );
 
@@ -102,7 +103,7 @@ impl Package {
             };
             crate::info!("Adding {} to tarball", &resolved_path);
             ar.append_file(
-                Path::new("dist").join(&filename),
+                Path::new("dist").join(filename),
                 &mut std::fs::File::open(resolved_path).context("could not open file")?,
             )
             .context("could not add file to TGZ archive")?;

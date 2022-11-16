@@ -37,7 +37,7 @@ To install a **specific version** of Rover (recommended for CI environments to e
 
 ```bash
 # Note the `v` prefixing the version number
-iwr 'https://rover.apollo.dev/win/v0.9.1' | iex
+iwr 'https://rover.apollo.dev/win/v0.10.0' | iex
 ```
 
 ### `npm` installer
@@ -70,9 +70,9 @@ npm install -g @apollo/rover
 
 You can also [download the Rover binary for your operating system](https://github.com/apollographql/rover/releases) and manually add its location to your `PATH`.
 
-## Connecting to Studio
+## Connecting to GraphOS
 
-After you install Rover, you should authenticate it with [Apollo Studio](/studio/), because many of its commands communicate with Studio.
+After you install Rover, you should authenticate it with [GraphOS](/graphos/), because many of its commands communicate with GraphOS.
 
 Run the following command:
 

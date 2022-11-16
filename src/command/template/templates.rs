@@ -1,15 +1,15 @@
+use std::env;
+
+use anyhow::anyhow;
 use console::Term;
 use dialoguer::Select;
 use graphql_client::{GraphQLQuery, Response};
 use reqwest::blocking::Client;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use std::env;
 
-use crate::anyhow;
-use crate::error::RoverError;
 use crate::options::ProjectLanguage;
-use crate::Result;
+use crate::{RoverError, RoverResult};
 
 use super::queries::{
     get_template_by_id::GetTemplateByIdTemplate,
@@ -17,7 +17,7 @@ use super::queries::{
     list_templates_for_language::ListTemplatesForLanguageTemplates, *,
 };
 
-fn request<Body: Serialize, Data: DeserializeOwned>(body: &Body) -> Result<Data> {
+fn request<Body: Serialize, Data: DeserializeOwned>(body: &Body) -> RoverResult<Data> {
     let uri = env::var("APOLLO_TEMPLATES_API")
         .unwrap_or_else(|_| "https://apollo-templates.up.railway.app".to_string());
     let resp = Client::new()
@@ -34,7 +34,7 @@ fn request<Body: Serialize, Data: DeserializeOwned>(body: &Body) -> Result<Data>
 }
 
 /// Get a template by ID
-pub fn get_template(template_id: &str) -> Result<Option<GetTemplateByIdTemplate>> {
+pub fn get_template(template_id: &str) -> RoverResult<Option<GetTemplateByIdTemplate>> {
     use super::queries::get_template_by_id::*;
     let query = GetTemplateById::build_query(Variables {
         id: template_id.to_string(),
@@ -45,7 +45,7 @@ pub fn get_template(template_id: &str) -> Result<Option<GetTemplateByIdTemplate>
 
 pub fn get_templates_for_language(
     language: ProjectLanguage,
-) -> Result<Vec<GetTemplatesForLanguageTemplates>> {
+) -> RoverResult<Vec<GetTemplatesForLanguageTemplates>> {
     use super::queries::get_templates_for_language::*;
     let query = GetTemplatesForLanguage::build_query(Variables {
         language: Some(language.into()),
@@ -56,7 +56,7 @@ pub fn get_templates_for_language(
 
 pub fn list_templates(
     language: Option<ProjectLanguage>,
-) -> Result<Vec<ListTemplatesForLanguageTemplates>> {
+) -> RoverResult<Vec<ListTemplatesForLanguageTemplates>> {
     use super::queries::list_templates_for_language::*;
     let query = ListTemplatesForLanguage::build_query(Variables {
         language: language.map(Into::into),
@@ -65,7 +65,7 @@ pub fn list_templates(
     error_if_empty(resp.templates)
 }
 
-pub fn error_if_empty<T>(values: Vec<T>) -> Result<Vec<T>> {
+pub fn error_if_empty<T>(values: Vec<T>) -> RoverResult<Vec<T>> {
     if values.is_empty() {
         Err(RoverError::new(anyhow!(
             "No templates matched the provided filters"
@@ -78,7 +78,7 @@ pub fn error_if_empty<T>(values: Vec<T>) -> Result<Vec<T>> {
 /// Prompt to select a template
 pub fn selection_prompt(
     mut templates: Vec<GetTemplatesForLanguageTemplates>,
-) -> Result<GetTemplatesForLanguageTemplates> {
+) -> RoverResult<GetTemplatesForLanguageTemplates> {
     let names = templates
         .iter()
         .map(|t| t.name.as_str())
